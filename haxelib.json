@@ -1,0 +1,11 @@
+{
+    "name": "haxebridge",
+    "url": "https://bitbucket.org/jeremyfa/haxe-bridge",
+    "license": "MIT",
+    "tags": ["haxe", "bridge", "cross", "ios", "android"],
+    "description": "Helpers to communicate between Haxe and Objective-C/Java objects",
+    "version": "1.0.0",
+    "releasenote": "",
+    "contributors": ["jeremyfa"],
+    "dependencies": {}
+}

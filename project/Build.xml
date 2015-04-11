@@ -1,0 +1,107 @@
+<xml>
+
+   <!--
+      Build with:
+         -Diphonesim              -> build i386 version
+         -Diphoneos               -> build armv6
+         -Diphoneos -DHXCPP_ARMV7 -> build armv7
+         -Dandroid                -> build android armv5
+         -Dandroid  -DHXCPP_ARMV7 -> build android armv7
+         -Dandroid  -DHXCPP_X86   -> build android x86
+         - no defines             -> build current OS
+         -DHXCPP_M64              -> build current OS, 64 but version
+         -Ddebug                  -> Used in combination with above for debug
+   -->
+
+<!-- Configure HXCPP -->
+
+    <set name="HXCPP_CPP11" value="1" />
+
+        <!-- Force to use oldest supported platform -->
+    <section if="android">
+      <set name="PLATFORM" value="android-12" />
+      <set name="PLATFORM" value="android-14" if="HXCPP_X86" />
+    </section>
+
+
+<!-- Build set up -->
+
+        <!-- included to import existing defines and built in defined values -->
+    <include name="${HXCPP}/build-tool/BuildCommon.xml" />
+        <!-- consistency, ios is a better define than iphone and should always be used instead -->
+    <set name="ios" value="1" if="iphone" />
+        <!-- where to build from -->
+    <set name="HAXEBRIDGE_ROOT" value="" />
+        <!-- paths -->
+    <set name="SRC_DIR" value="src" />
+    <set name="INC_DIR" value="include" />
+    <set name="OUT_DIR" value="../ndll" />
+        <!-- lib values -->
+    <set name="LIBNAME" value="haxebridge" />
+    <set name="SLIBEXT" value=".lib" if="windows" />
+    <set name="SLIBEXT" value=".a" unless="windows" />
+    <set name="SHLIBEXT" value=".dll" if="windows" />
+    <set name="SHLIBEXT" value=".so" unless="windows" />
+    <set name="SHLIBEXT" value=".dylib" if="mac || ios" />
+    <set name="DEBUGEXTRA" value="" />
+    <set name="DEBUGEXTRA" value="" if="static_link" />
+
+    <set name="PRELIB" value="lib/${BINDIR}/${LIBPREFIX}" />
+    <set name="POSTLIB" value="${DBG}${LIBEXTRA}${SLIBEXT}" />
+    <set name="POSTSHAREDLIB" value="${DBG}${LIBEXTRA}${SHLIBEXT}" />
+
+<!-- Build configs -->
+
+<!-- Common sources -->
+
+	<files id="common">
+
+        <depend name="${HXCPP}/include/hx/Macros.h" />
+        <depend name="${HXCPP}/include/hx/CFFI.h" />
+
+		<compilerflag value="-I${INC_DIR}/common"/>
+		<file name="${SRC_DIR}/common/haxebridge.cpp"/>
+
+	</files>
+
+<!-- Platform specific sources -->
+
+	<files id="objc">
+
+		<dependency name="Foundation.framework" />
+        <dependency name="UIKit.framework" />
+
+		<compilerflag value="-fobjc-arc" />
+
+		<compilerflag value="-I${INC_DIR}/common"/>
+		<compilerflag value="-I${INC_DIR}/objc" />
+
+		<file name="${SRC_DIR}/objc/HXBridge.mm" />
+
+	</files>
+
+<!-- Build targets -->
+
+	<target id="NDLL" output="${LIBPREFIX}${LIBNAME}${DEBUGEXTRA}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+
+        <section unless="static_link">
+
+            <ext value=".so" />
+            <ext value=".ndll" if="windows || mac || linux" />
+
+        </section>
+
+		<outdir name="${OUT_DIR}/${BINDIR}" />
+		<ext value=".ndll" unless="ios || android" />
+		<files id="objc" if="ios" />
+		<files id="common" />
+
+	</target>
+
+	<target id="default">
+
+		<target id="NDLL" />
+
+	</target>
+
+</xml>
