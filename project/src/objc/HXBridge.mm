@@ -14,14 +14,13 @@
 //
 
 #import "HXBridge.h"
-
 #include "haxebridge.h"
 
     // Obj-C listener instances by channel
 static NSMutableDictionary *sHXBridge_objc_listeners = nil;
 
     // Native listener function that links haxe extension's C++ code with Obj-C logic
-const char* sHXBridge_native_listener(const char* channel, const char *message) {
+value sHXBridge_native_listener(const char* channel, const char *message) {
         // Find listener from channel
     NSString *channel_nsstring = [[NSString alloc] initWithUTF8String:channel];
     id<HXBridgeChannelListener> listener = sHXBridge_objc_listeners[channel_nsstring];
@@ -31,7 +30,10 @@ const char* sHXBridge_native_listener(const char* channel, const char *message) 
     NSString *message_nsstring = message == NULL ? nil : [[NSString alloc] initWithUTF8String:message];
     NSString *result = [listener hxBridgeDidReceiveMessage:message_nsstring fromChannel:channel_nsstring];
         // Return result
-    return [result cStringUsingEncoding:NSUTF8StringEncoding];
+    if (!result) {
+        return alloc_null();
+    }
+    return alloc_string([result cStringUsingEncoding:NSUTF8StringEncoding]);
 }
 
 @implementation HXBridge
@@ -53,12 +55,12 @@ const char* sHXBridge_native_listener(const char* channel, const char *message) 
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         sHXBridge_objc_listeners = [NSMutableDictionary dictionary];
+            // Map the local listener on C++ side
+        haxebridge::native_listen(&sHXBridge_native_listener);
     });
 
         // Keep track of listener on Obj-C side
     sHXBridge_objc_listeners[channel] = listener;
-        // Map the listener on C++ side
-    haxebridge::native_listen([channel cStringUsingEncoding:NSUTF8StringEncoding], &sHXBridge_native_listener);
 }
 
 @end

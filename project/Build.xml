@@ -17,12 +17,6 @@
 
     <set name="HXCPP_CPP11" value="1" />
 
-        <!-- Force to use oldest supported platform -->
-    <section if="android">
-      <set name="PLATFORM" value="android-12" />
-      <set name="PLATFORM" value="android-14" if="HXCPP_X86" />
-    </section>
-
 
 <!-- Build set up -->
 
@@ -80,6 +74,15 @@
 
 	</files>
 
+	<files id="jni">
+
+		<compilerflag value="-I${INC_DIR}/common"/>
+		<compilerflag value="-I${INC_DIR}/jni" />
+
+		<file name="${SRC_DIR}/jni/haxebridge_Bridge.cpp" />
+
+	</files>
+
 <!-- Build targets -->
 
 	<target id="NDLL" output="${LIBPREFIX}${LIBNAME}${DEBUGEXTRA}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
@@ -94,6 +97,7 @@
 		<outdir name="${OUT_DIR}/${BINDIR}" />
 		<ext value=".ndll" unless="ios || android" />
 		<files id="objc" if="ios" />
+		<files id="jni" if="android" />
 		<files id="common" />
 
 	</target>

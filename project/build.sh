@@ -2,5 +2,13 @@
 #fail on errors
 set -e
 
-# Build
-haxelib run flow build ios --clean --project haxebridge.flow --archs armv6,armv7,armv7s,arm64,sim,sim64 --d static_link
+# Build iOS
+haxelib run hxcpp Build.xml -Diphoneos -DHXCPP_ARMV7
+haxelib run hxcpp Build.xml -Diphoneos -DHXCPP_ARM64
+haxelib run hxcpp Build.xml -Diphonesim
+haxelib run hxcpp Build.xml -Diphonesim -DHXCPP_M64
+
+# Build Android
+haxelib run hxcpp Build.xml -Dandroid
+haxelib run hxcpp Build.xml -Dandroid -DHXCPP_ARMV7
+haxelib run hxcpp Build.xml -Dandroid -DHXCPP_X86

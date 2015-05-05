@@ -23,7 +23,11 @@ class Bridge {
     #if cpp
         // Native C++ bindings
     private static var native_haxe_send = Lib.load("haxebridge", "haxe_send", 2);
-    private static var native_haxe_listen = Lib.load("haxebridge", "haxe_listen", 2);
+    private static var native_haxe_listen = Lib.load("haxebridge", "haxe_listen", 1);
+        // Flag to know if we are already listening native side
+    private static var listening_native:Bool = false;
+        // Listeners mapping
+    private static var listeners:Map<String,String->String->String> = new Map<String,String->String->String>();
     #end
 
     public static function send(channel:String, message:String):String {
@@ -35,13 +39,28 @@ class Bridge {
         #end
     }
 
-    public static function listen(channel:String, listener:String->String):Void {
+    public static function listen(channel:String, listener:String->String->String):Void {
         #if cpp
-            // Forward to C++ implementation
-        return native_haxe_listen(channel, listener);
-        #else
-        return null;
+            // Init listener to receive native events if needed
+        if (!listening_native) {
+                // Forward to C++ implementation
+            native_haxe_listen(receive_from_native);
+            listening_native = true;
+        }
+            // Map listener
+        listeners.set(channel, listener);
         #end
+    }
+
+    private static function receive_from_native(channel:String, message:String):String {
+        #if cpp
+        var listener = listeners.get(channel);
+        if (listener != null) {
+                // Call assigned listener
+            return listener(channel, message);
+        }
+        #end
+        return null;
     }
 
 }

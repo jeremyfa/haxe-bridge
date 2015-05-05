@@ -22,26 +22,23 @@
 
 #include <hx/CFFI.h>
 #include <string>
-#include <map>
 
 #include "haxebridge.h"
 
 namespace haxebridge {
 
-        // Haxe channel listeners mapping
-    std::map<std::string, AutoGCRoot*> haxe_channel_listeners;
+        // Local listener
+    native_listener local_listener = NULL;
 
-        // Native channel listeners mapping
-    std::map<std::string, native_listener> native_channel_listeners;
+        // Haxe listener
+    AutoGCRoot *haxe_listener = NULL;
 
         // Send message from native to haxe
     const char* native_send(const char* channel, const char* message) {
-            // Check if there is a registered haxe listener for this channel
-        std::string key = channel;
-        auto search = haxe_channel_listeners.find(key);
-        if (search != haxe_channel_listeners.end()) {
+            // Check if there is a registered haxe listener
+        if (haxe_listener != NULL) {
                 // Yes, then call it
-            value result = val_call1(search->second->get(), (message == NULL ? alloc_null() : alloc_string(message)) );
+            value result = val_call2(haxe_listener->get(), alloc_string(channel), (message == NULL ? alloc_null() : alloc_string(message)) );
             if (val_is_string(result)) {
                 return val_string(result);
             }
@@ -52,25 +49,17 @@ namespace haxebridge {
     }
 
         // Listen to messages sent from haxe
-    void native_listen(const char* channel, native_listener listener) {
-            // Assign listener to the given channel in mapping
-        std::string key = channel;
-        native_channel_listeners[key] = listener;
+    void native_listen(native_listener listener) {
+            // Assign listener to the local one
+        local_listener = listener;
     }
 
         // Send message from haxe to native
     value haxe_send(value channel, value message) {
-            // Check if there is a registered native listener for this channel
-        const char *channel_str = val_string(channel);
-        std::string key(channel_str);
-        auto search = native_channel_listeners.find(key);
-        if (search != native_channel_listeners.end()) {
+            // Check if there is a registered local listener
+        if (local_listener != NULL) {
                 // Yes, then call it
-            const char *result = ((native_listener)(*(search->second)))(channel_str, val_string(message));
-            if (result == NULL) {
-                return alloc_null();
-            }
-            return alloc_string(result);
+            return (*local_listener)(val_string(channel), val_string(message));
         }
             // No, then return null
         return alloc_null();
@@ -78,20 +67,11 @@ namespace haxebridge {
     DEFINE_PRIM(haxe_send, 2);
 
         // Listen to messages sent from native
-    void haxe_listen(value channel, value listener) {
-            // Check if there is a registered haxe listener for this channel
-        std::string key = val_string(channel);
-        auto search = haxe_channel_listeners.find(key);
-        if (search != haxe_channel_listeners.end()) {
-                // Yes, then remove it
-            haxe_channel_listeners.erase(search);
-            delete search->second;
-        }
-
-            // Assign new listener
-        haxe_channel_listeners[key] = new AutoGCRoot(listener);
+    void haxe_listen(value listener) {
+            // Assign listener
+        haxe_listener = new AutoGCRoot(listener);
     }
-    DEFINE_PRIM(haxe_listen, 2);
+    DEFINE_PRIM(haxe_listen, 1);
 
         // Entry point
     extern "C" void haxebridge_entry_point() {

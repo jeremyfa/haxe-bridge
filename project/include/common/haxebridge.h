@@ -20,19 +20,19 @@
 namespace haxebridge {
 
         // Native listener type
-    typedef const char* (*native_listener)(const char* channel, const char *message);
+    typedef value (*native_listener)(const char* channel, const char *message);
 
         // Send message from haxe to native
     value haxe_send(value channel, value message);
 
         // Listen to messages sent from native
-    void haxe_listen(value channel, value listener);
+    void haxe_listen(value listener);
 
         // Send message from native to haxe
     const char* native_send(const char* channel, const char* message);
 
         // Listen to messages sent from haxe
-    void native_listen(const char* channel, native_listener listener);
+    void native_listen(native_listener listener);
 
 }
 
