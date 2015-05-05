@@ -3,7 +3,7 @@ package haxebridge;
 import java.util.Map;
 import java.util.HashMap;
 
-class Bridge {
+public class Bridge {
 
     static {
         System.loadLibrary("haxebridge");
@@ -20,6 +20,7 @@ class Bridge {
     private static Map<String,ChannelListener> getChannelListeners() {
         if (sChannelListeners == null) {
             sChannelListeners = new HashMap<String,ChannelListener>();
+            initNativeListener();
         }
         return sChannelListeners;
     }

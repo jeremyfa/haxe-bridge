@@ -3,17 +3,16 @@
 
     // Keep track of JNI env and method to let java receive messages
 static JNIEnv *s_haxebridge_jni_env = NULL;
-static jclass s_haxebridge_jni_class = NULL;
-static jmethodID s_haxebridge_jni_method = NULL;
 
 value s_haxebridge_jni_local_listener(const char *channel, const char *message) {
-        // Retrieve kept values we need
+        // Retrieve env
     JNIEnv *env = s_haxebridge_jni_env;
-    jclass cls = s_haxebridge_jni_class;
-    jmethodID method = s_haxebridge_jni_method;
 
         // Ensure the env is available (if not, that means java is not listening to anything)
     if (env == NULL) return alloc_null();
+
+    jclass cls = env->FindClass("haxebridge/Bridge");
+    jmethodID method = env->GetStaticMethodID(cls, "receiveFromHaxe", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
 
         // Call java method
     jstring channel_jstr = env->NewStringUTF(channel);
@@ -23,9 +22,7 @@ value s_haxebridge_jni_local_listener(const char *channel, const char *message) 
     env->DeleteLocalRef(message_jstr);
 
         // Compute and return result for haxe side
-    if (result_jstr == NULL) {
-        return alloc_null();
-    }
+    if (result_jstr == NULL) return alloc_null();
     const char *result_str = env->GetStringUTFChars(result_jstr, 0);
     value result = alloc_string(result_str);
     env->ReleaseStringUTFChars(result_jstr, result_str);
@@ -57,9 +54,8 @@ JNIEXPORT jstring JNICALL Java_haxebridge_Bridge_sendMessage(JNIEnv *env, jclass
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_haxebridge_Bridge_initNativeListener(JNIEnv *env, jclass cls) {
-        // Assign values we want to keep
+        // Keep JNIEnv* instance
     s_haxebridge_jni_env = env;
-    s_haxebridge_jni_method = env->GetStaticMethodID(cls, "receiveFromHaxe", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String");
 
         // Map the local listener on C++ side
     haxebridge::native_listen(&s_haxebridge_jni_local_listener);
